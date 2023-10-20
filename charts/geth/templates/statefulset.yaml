@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "geth.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "geth.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "geth.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "geth.fullname" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "geth.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "geth.serviceAccountName" . }}
+      nodeSelector:
+        {{- include "geth.selectorLabels" . | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http-rpc
+              containerPort: {{ .Values.httpPort }}
+              protocol: TCP
+            - name: ws-rpc
+              containerPort: {{ .Values.wsPort }}
+              protocol: TCP
+            - name: auth-rpc
+              containerPort: {{ .Values.authPort }}
+              protocol: TCP
+            - name: p2p-tcp
+              containerPort: {{ .Values.p2pPort }}
+              protocol: TCP
+            - name: p2p-udp
+              containerPort: {{ .Values.p2pPort }}
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.metricsPort }}
+              protocol: TCP
+          command:
+            - sh
+            - -ac
+            - >
+              exec geth
+              --syncmode=snap
+            {{- if eq .Values.network "goerli" }}
+              --goerli
+            {{- end }}
+              --nat=extip:{{ .Values.externalResources.loadBalancerIP }}
+              --http
+              --http.addr=0.0.0.0
+              --http.port={{ .Values.httpRpcPort }}
+              --http.vhosts=*
+              --http.api="db,eth,net,engine,rpc,web3"
+              --http.corsdomain=*
+              --authrpc.jwtsecret="/data/{{ .Values.jwtSecretFilename }}"
+              --authrpc.addr=0.0.0.0
+              --authrpc.port={{ .Values.authRpcPort }}
+              --authrpc.vhosts=*
+              --metrics
+              --metrics.addr=0.0.0.0
+              --metrics.port={{ .Values.metricsPort }}
+              --ws
+              --ws.addr=0.0.0.0
+              --ws.port={{ .Values.wsRpcPort }}
+              --ws.origins=*
+            {{- range .Values.extraArgs }}
+              {{ . }}
+            {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: http-rpc
+            initialDelaySeconds: 60
+            periodSeconds: 120
+          readinessProbe:
+            tcpSocket:
+              port: http-rpc
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: {{ .Chart.Name }}-data
+              mountPath: /root
+            - name: jwt
+              mountPath: "/data/{{ .Values.jwtSecretFilename }}"
+              subPath: {{ .Values.jwtSecretFilename }}
+              readOnly: true
+      volumes:
+        - name: jwt
+          secret:
+            secretName: {{ .Values.jwtSecretName }}
+        - name: {{ .Chart.Name }}-data
+          persistentVolumeClaim:
+            claimName: {{ include "geth.fullname" . }}-pvc

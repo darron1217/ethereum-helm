@@ -1,0 +1,74 @@
+# Default values for geth.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+### Image Configuration
+
+image:
+  repository: ethereum/client-go
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: stable
+
+### Geth Configuration
+
+# -- P2P Port
+p2pPort: 30303
+
+# -- HTTP Port
+httpPort: 8545
+
+# -- WS Port
+wsPort: 8546
+
+# -- Engine Port (Auth Port)
+authPort: 8551
+
+# -- Metrics Port
+metricsPort: 6060
+
+# -- JWT Secret
+jwtSecretName: jwt-secret
+jwtSecretFilename: jwt.hex
+
+# -- Network ID
+network: "goerli"
+
+# -- Extra args for the geth container
+extraArgs: []
+
+### Node Configuration
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+externalResources:
+  resourceGroupName: ""
+  loadBalancerIP: 0.0.0.0
+
+volume:
+  name: ""
+  size: 150Gi
+  storageClassName: local-path
+  nodeName: ""
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
