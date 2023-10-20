@@ -1,0 +1,15 @@
+apiVersion: v2
+name: nethermind
+description: >
+  Nethermind is an Ethereum execution layer implementation created with the C# .NET tech stack, running on all major platforms including ARM.
+home: https://nethermind.io/
+icon: https://launchpad.ethereum.org/static/media/nethermind-circle.fbbf1a32.png
+sources:
+  - https://github.com/NethermindEth/nethermind
+type: application
+version: 1.0.9
+maintainers:
+  - name: skylenet
+    email: rafael@skyle.net
+  - name: barnabasbusa
+    email: busa.barnabas@gmail.com
